@@ -222,10 +222,6 @@ void World::init()
 
     for(unsigned int i=0; i<num_karts; i++)
     {
-        pos = spawnposes[rand() % size];
-        spawnposes[pos] = spawnposes[size - 1];
-        size--;
-
         main_loop->renderGUI(7000, i, num_karts);
         if (race_manager->getKartType(i) == RaceManager::KT_GHOST) continue;
         std::string kart_ident = history->replayHistory()
@@ -242,6 +238,16 @@ void World::init()
         }
         else
         {
+            if (race_manager->isBattleMode()) {
+                pos = spawnposes[rand() % size];
+                spawnposes[pos] = spawnposes[size - 1];
+                size--;
+            } else {
+                if (race_manager->hasGhostKarts())
+                    gk = ReplayPlay::get()->getNumGhostKart();
+                pos = i - gk;
+            }
+            
             new_kart = createKart(kart_ident, i, local_player_id,
                 global_player_id, race_manager->getKartType(i),
                 race_manager->getPlayerDifficulty(i), pos);
@@ -434,10 +440,6 @@ std::shared_ptr<AbstractKart> World::createKart
     int global_player_id, RaceManager::KartType kart_type,
     PerPlayerDifficulty difficulty, int spawn_pos)
 {
-    unsigned int gk = 0;
-    if (race_manager->hasGhostKarts())
-        gk = ReplayPlay::get()->getNumGhostKart();
-
     std::shared_ptr<RenderInfo> ri = std::make_shared<RenderInfo>();
     core::stringw online_name;
     if (global_player_id > -1)
