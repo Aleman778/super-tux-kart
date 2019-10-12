@@ -84,6 +84,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <ctime>
+#include <cstdlib>
 #include <sstream>
 #include <stdexcept>
 
@@ -212,8 +213,19 @@ void World::init()
     if (hasTeam())
         setAITeam();
 
+    srand(time(0));
+    unsigned int size = 10;
+    unsigned int pos, spawnposes[size];
+    for(unsigned int i=0; i<size; i++){
+        spawnposes[i] = i;
+    }
+
     for(unsigned int i=0; i<num_karts; i++)
     {
+        pos = spawnposes[rand() % size];
+        spawnposes[pos] = spawnposes[size - 1];
+        size--;
+
         main_loop->renderGUI(7000, i, num_karts);
         if (race_manager->getKartType(i) == RaceManager::KT_GHOST) continue;
         std::string kart_ident = history->replayHistory()
@@ -232,7 +244,7 @@ void World::init()
         {
             new_kart = createKart(kart_ident, i, local_player_id,
                 global_player_id, race_manager->getKartType(i),
-                race_manager->getPlayerDifficulty(i));
+                race_manager->getPlayerDifficulty(i), pos);
         }
         new_kart->setBoostAI(race_manager->hasBoostedAI(i));
         m_karts.push_back(new_kart);
@@ -420,7 +432,7 @@ void World::createRaceGUI()
 std::shared_ptr<AbstractKart> World::createKart
     (const std::string &kart_ident, int index, int local_player_id,
     int global_player_id, RaceManager::KartType kart_type,
-    PerPlayerDifficulty difficulty)
+    PerPlayerDifficulty difficulty, int spawn_pos)
 {
     unsigned int gk = 0;
     if (race_manager->hasGhostKarts())
@@ -437,7 +449,7 @@ std::shared_ptr<AbstractKart> World::createKart
     }
 
     int position           = index+1;
-    btTransform init_pos   = getStartTransform(index - gk);
+    btTransform init_pos   = getStartTransform(spawn_pos);
     std::shared_ptr<AbstractKart> new_kart;
     if (RewindManager::get()->isEnabled())
     {
